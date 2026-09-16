@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<title>Poll Timbalan Ketua Batch</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--purple:#7c3aed;--green:#16a34a;--pink:#ec4899;--text:#172033;--soft:#64748b}
+html,body{width:100%;min-height:100%}
+body{
+  min-height:100vh;min-height:100dvh;overflow:hidden;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 15% 20%,rgba(255,255,255,.9),transparent 25%),
+    radial-gradient(circle at 85% 80%,rgba(255,255,255,.45),transparent 25%),
+    linear-gradient(135deg,#dbeafe 0%,#ede9fe 30%,#fae8ff 65%,#fce7f3 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right))
+          max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+}
+body:before,body:after{
+  content:"";position:fixed;border-radius:50%;pointer-events:none;opacity:.5;z-index:0
+}
+body:before{width:260px;height:260px;top:-90px;right:-80px;background:rgba(124,58,237,.2)}
+body:after{width:220px;height:220px;bottom:-100px;left:-70px;background:rgba(236,72,153,.17)}
+button{font:inherit;-webkit-tap-highlight-color:transparent}
+.page{width:min(94vw,720px);position:relative;z-index:2}
+.poll-card{
+  position:relative;background:rgba(255,255,255,.93);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.9);border-radius:30px;
+  padding:clamp(28px,6vw,56px);text-align:center;
+  box-shadow:0 30px 80px rgba(76,29,149,.15),0 12px 30px rgba(15,23,42,.08);
+  transition:.5s ease
+}
+.poll-card.hidden{opacity:0;transform:scale(.9);pointer-events:none}
+.top-label{
+  display:inline-flex;gap:8px;align-items:center;margin-bottom:20px;padding:8px 14px;
+  border-radius:999px;background:#ede9fe;color:#5b21b6;font-size:.78rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase
+}
+h1{max-width:570px;margin:auto;font-size:clamp(2rem,5vw,3.5rem);line-height:1.06;letter-spacing:-.045em;color:#17142e}
+.subtitle{max-width:520px;margin:18px auto 0;color:var(--soft);font-size:clamp(1rem,2.5vw,1.15rem);line-height:1.6;transition:.35s}
+.subtitle.democracy{color:#c026d3;font-weight:800}
+.button-area{
+  position:relative;width:100%;min-height:170px;margin-top:34px;
+  display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap
+}
+.choice-btn{
+  position:relative;border:0;border-radius:18px;min-height:64px;padding:18px 26px;
+  font-weight:900;font-size:clamp(.95rem,2.5vw,1.08rem);cursor:pointer;user-select:none;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,filter .22s,font-size .22s,padding .22s
+}
+#yesBtn{
+  z-index:4;color:#fff;background:linear-gradient(135deg,#16a34a,#22c55e);
+  box-shadow:0 14px 30px rgba(34,197,94,.28)
+}
+#yesBtn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 20px 38px rgba(34,197,94,.34)}
+#noBtn{
+  z-index:20;color:#991b1b;background:linear-gradient(135deg,#fee2e2,#fecaca);
+  border:1px solid rgba(239,68,68,.18);box-shadow:0 12px 25px rgba(239,68,68,.16);
+  touch-action:none;white-space:nowrap
+}
+#noBtn.runaway{
+  position:fixed;margin:0;
+  transition:left .25s cubic-bezier(.22,.8,.32,1),top .25s cubic-bezier(.22,.8,.32,1),
+             transform .2s,font-size .2s,padding .2s
+}
+.counter{margin-top:8px;font-size:.82rem;color:#94a3b8;font-weight:700}
+.funny-message{
+  min-height:44px;margin-top:12px;display:flex;align-items:center;justify-content:center;
+  color:#6d28d9;font-weight:800;line-height:1.45;opacity:0;transform:translateY(7px);
+  transition:.3s
+}
+.funny-message.visible{opacity:1;transform:translateY(0)}
+.yes-hint{
+  position:absolute;z-index:5;left:50%;bottom:-43px;transform:translateX(-50%);
+  padding:8px 12px;border-radius:999px;background:#fff;color:#15803d;
+  box-shadow:0 8px 20px rgba(15,23,42,.12);font-size:.82rem;font-weight:900;
+  opacity:0;pointer-events:none;transition:.3s
+}
+.yes-hint.visible{opacity:1;transform:translateX(-50%) translateY(4px)}
+.celebration{
+  position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;
+  background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.75),transparent 35%),
+             linear-gradient(135deg,#ede9fe 0%,#fce7f3 45%,#dcfce7 100%)
+}
+.celebration.show{display:flex;animation:fadeIn .55s ease both}
+.celebration-card{
+  width:min(92vw,700px);text-align:center;padding:clamp(30px,7vw,64px);
+  background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.95);
+  border-radius:34px;box-shadow:0 35px 80px rgba(76,29,149,.18);
+  animation:celebrationPop .7s cubic-bezier(.15,.85,.25,1.2) both
+}
+.party-icon{font-size:clamp(3rem,10vw,5rem);margin-bottom:10px;animation:bounceParty 1s ease infinite alternate}
+.celebration h2{
+  font-size:clamp(2.7rem,10vw,5.2rem);line-height:1;letter-spacing:-.06em;
+  background:linear-gradient(90deg,#7c3aed,#db2777,#16a34a);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.celebration-main{margin-top:24px;font-size:clamp(1.15rem,3.5vw,1.55rem);font-weight:900;line-height:1.5}
+.celebration-second{margin-top:10px;color:#7c3aed;font-size:clamp(1.05rem,3vw,1.3rem);font-weight:900}
+.celebration-small{max-width:520px;margin:22px auto 0;color:#64748b;line-height:1.6}
+.confirmed-badge{
+  display:inline-flex;align-items:center;justify-content:center;margin-top:30px;padding:16px 22px;
+  border-radius:18px;border:3px solid #16a34a;color:#15803d;background:rgba(220,252,231,.72);
+  box-shadow:0 12px 30px rgba(22,163,74,.13);font-size:clamp(.92rem,3vw,1.15rem);
+  font-weight:950;letter-spacing:.025em;transform:rotate(-2deg);
+  animation:stampIn .6s .35s cubic-bezier(.1,.9,.3,1.3) both
+}
+#confettiCanvas{position:fixed;inset:0;z-index:110;width:100%;height:100%;pointer-events:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes celebrationPop{from{opacity:0;transform:scale(.75) translateY(20px)}to{opacity:1;transform:scale(1)}}
+@keyframes stampIn{from{opacity:0;transform:scale(2.2) rotate(-14deg)}to{opacity:1;transform:scale(1) rotate(-2deg)}}
+@keyframes bounceParty{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-8px) rotate(5deg)}}
+@keyframes yesPulse{0%,100%{transform:scale(var(--yes-scale,1))}50%{transform:scale(calc(var(--yes-scale,1) + .08));box-shadow:0 0 0 12px rgba(34,197,94,.11),0 18px 40px rgba(34,197,94,.36)}}
+@keyframes yesShake{0%,100%{translate:0 0}25%{translate:-4px 0}75%{translate:4px 0}}
+.yes-attention{animation:yesPulse .75s ease 2,yesShake .25s ease 2}
+@media(max-width:600px){
+  .poll-card{border-radius:24px;padding:28px 20px 30px}
+  .button-area{min-height:185px;flex-direction:column}
+  .choice-btn{width:min(100%,360px)}
+  #yesBtn{order:1}#noBtn{order:2}.yes-hint{bottom:-46px}
+}
+</style>
+</head>
+<body>
+<main class="page" id="mainPage">
+  <section class="poll-card" id="pollCard">
+    <div class="top-label">🗳️ Sistem Undian Batch</div>
+    <h1>Adakah anda ingin terus menjadi Timbalan Ketua Batch?</h1>
+    <p class="subtitle" id="subtitle">Sila buat pilihan anda secara bebas dan tanpa sebarang paksaan 👀</p>
+    <div class="button-area">
+      <button class="choice-btn" id="yesBtn" type="button">YA, SAYA TERUSKAN 😎</button>
+      <button class="choice-btn" id="noBtn" type="button">TIDAK, SAYA NAK BERHENTI 😭</button>
+      <div class="yes-hint" id="yesHint">👆 Pilihan yang betul ada di sini</div>
+    </div>
+    <div class="counter" id="attemptCounter">Percubaan untuk resign: 0</div>
+    <div class="funny-message" id="funnyMessage"></div>
+  </section>
+</main>
+
+<section class="celebration" id="celebration" aria-hidden="true">
+  <div class="celebration-card">
+    <div class="party-icon">🥳🎉</div>
+    <h2>TAHNIAH! 🎉</h2>
+    <p class="celebration-main">Anda secara rasminya bersetuju untuk terus menjadi Timbalan Ketua Batch!</p>
+    <p class="celebration-second">Tiada patah balik dah 😎</p>
+    <p class="celebration-small">Keputusan ini telah direkodkan oleh sistem yang sangat adil dan tidak berat sebelah.</p>
+    <div class="confirmed-badge">✅ TIMBALAN KETUA BATCH — CONFIRMED</div>
+  </div>
+</section>
+<canvas id="confettiCanvas"></canvas>
+
+<script>
+(() => {
+  const noBtn=document.getElementById("noBtn"), yesBtn=document.getElementById("yesBtn");
+  const pollCard=document.getElementById("pollCard"), subtitle=document.getElementById("subtitle");
+  const attemptCounter=document.getElementById("attemptCounter"), funnyMessage=document.getElementById("funnyMessage");
+  const yesHint=document.getElementById("yesHint"), celebration=document.getElementById("celebration");
+
+  let attempts=0, runawayStarted=false, lastEscapeTime=0, noScale=1, yesScale=1;
+
+  const noTexts=["TIDAK 😭","Eh jangan!","Tak boleh 😌","Cuba lagi 😂","Are you sure?","Jangan kejar saya!","Tak dapat 😜","Almost!","Hehe 😏","Give up lah 😂"];
+
+  function updateFunnyMessage(){
+    let message="";
+    if(attempts>=15){
+      message="Button TIDAK sedang mempertimbangkan untuk resign juga.";
+      subtitle.textContent="Demokrasi telah mengalami sedikit masalah teknikal.";
+      subtitle.classList.add("democracy");
+    } else if(attempts>=10) message="Okay cukup. Tekan YA je lah 😂";
+    else if(attempts>=8) message="Nampaknya sistem sangat menggalakkan anda memilih YA 🤔";
+    else if(attempts>=5) message="Sistem mendapati anda mungkin tersalah pilihan.";
+    else if(attempts>=3) message="Kenapa bersungguh sangat nak tekan TIDAK tu? 🤨";
+
+    if(message){
+      funnyMessage.textContent=message;
+      funnyMessage.classList.add("visible");
+    }
+  }
+
+  function rectsOverlap(a,b,p=0){
+    return !(a.right<b.left-p || a.left>b.right+p || a.bottom<b.top-p || a.top>b.bottom+p);
+  }
+
+  function candidateOverlapsImportantArea(x,y,w,h){
+    const candidate={left:x,top:y,right:x+w,bottom:y+h};
+    const yesRect=yesBtn.getBoundingClientRect();
+    const cardRect=pollCard.getBoundingClientRect();
+    const textZone={left:cardRect.left-10,right:cardRect.right+10,top:cardRect.top-10,bottom:Math.min(cardRect.top+cardRect.height*.55,cardRect.bottom)};
+    return rectsOverlap(candidate,yesRect,30) || rectsOverlap(candidate,textZone,10);
+  }
+
+  function findSafePosition(){
+    const margin=14, rect=noBtn.getBoundingClientRect();
+    const width=Math.max(rect.width,40), height=Math.max(rect.height,30);
+    const maxX=Math.max(margin,innerWidth-width-margin), maxY=Math.max(margin,innerHeight-height-margin);
+    let best={x:margin,y:maxY};
+
+    for(let i=0;i<40;i++){
+      const x=margin+Math.random()*Math.max(1,maxX-margin);
+      const y=margin+Math.random()*Math.max(1,maxY-margin);
+      best={x,y};
+      if(!candidateOverlapsImportantArea(x,y,width,height)) return {x,y};
+    }
+    return best;
+  }
+
+  function startRunawayMode(){
+    if(runawayStarted)return;
+    const r=noBtn.getBoundingClientRect();
+    noBtn.classList.add("runaway");
+    noBtn.style.left=r.left+"px"; noBtn.style.top=r.top+"px";
+    noBtn.style.width=r.width+"px";
+    runawayStarted=true;
+  }
+
+  function randomBetween(min,max){ return Math.random()*(max-min)+min; }
+
+  function escapeNoButton(){
+    const now=performance.now();
+    if(now-lastEscapeTime<230)return;
+    lastEscapeTime=now;
+    startRunawayMode();
+    attempts++;
+
+    attemptCounter.textContent=`Percubaan untuk resign: ${attempts}`;
+
+    noScale=Math.max(.28,1-attempts*.055);
+    const hp=Math.max(6,26-attempts*1.15), vp=Math.max(5,18-attempts*.7);
+    noBtn.style.padding=`${vp}px ${hp}px`;
+    noBtn.style.fontSize=`${Math.max(.53,1.05-attempts*.028)}rem`;
+    noBtn.style.transform=`scale(${noScale}) rotate(${randomBetween(-6,6)}deg)`;
+    noBtn.textContent=noTexts[Math.floor(Math.random()*noTexts.length)];
+
+    yesScale=Math.min(1.60,1+attempts*.035);
+    yesBtn.style.setProperty("--yes-scale",yesScale);
+    yesBtn.style.transform=`scale(${yesScale})`;
+    yesBtn.style.filter=`saturate(${Math.min(1.7,1+attempts*.04)}) brightness(${Math.min(1.12,1+attempts*.006)})`;
+
+    requestAnimationFrame(()=>{
+      const p=findSafePosition();
+      noBtn.style.left=p.x+"px"; noBtn.style.top=p.y+"px";
+    });
+
+    updateFunnyMessage();
+    if(attempts>=8) yesHint.classList.add("visible");
+
+    if(attempts>10 && Math.random()<.55){
+      yesBtn.classList.remove("yes-attention");
+      void yesBtn.offsetWidth;
+      yesBtn.classList.add("yes-attention");
+    }
+  }
+
+  document.addEventListener("mousemove",(e)=>{
+    const r=noBtn.getBoundingClientRect();
+    const cx=Math.max(r.left,Math.min(e.clientX,r.right));
+    const cy=Math.max(r.top,Math.min(e.clientY,r.bottom));
+    const dx=e.clientX-cx, dy=e.clientY-cy;
+    const distance=Math.sqrt(dx*dx+dy*dy);
+    const radius=Math.max(85,120-attempts*2);
+    if(distance<radius) escapeNoButton();
+  },{passive:true});
+
+  ["pointerdown","click","mouseenter"].forEach(evt=>{
+    noBtn.addEventListener(evt,(e)=>{
+      if(e){e.preventDefault();e.stopPropagation();}
+      escapeNoButton();
+    });
+  });
+
+  noBtn.addEventListener("touchstart",(e)=>{
+    e.preventDefault();e.stopPropagation();escapeNoButton();
+  },{passive:false});
+
+  noBtn.addEventListener("focus",()=>{escapeNoButton();noBtn.blur();});
+
+  window.addEventListener("resize",()=>{
+    if(!runawayStarted)return;
+    requestAnimationFrame(()=>{
+      const r=noBtn.getBoundingClientRect(), m=12;
+      const maxL=Math.max(m,innerWidth-r.width-m), maxT=Math.max(m,innerHeight-r.height-m);
+      noBtn.style.left=Math.min(Math.max(r.left,m),maxL)+"px";
+      noBtn.style.top=Math.min(Math.max(r.top,m),maxT)+"px";
+    });
+  });
+
+  yesBtn.addEventListener("click",()=>{
+    noBtn.style.display="none";
+    pollCard.classList.add("hidden");
+    setTimeout(()=>{
+      document.getElementById("mainPage").style.display="none";
+      celebration.classList.add("show");
+      celebration.setAttribute("aria-hidden","false");
+      launchConfetti();
+    },350);
+  });
+
+  function launchConfetti(){
+    const canvas=document.getElementById("confettiCanvas"), ctx=canvas.getContext("2d");
+    const colors=["#7c3aed","#ec4899","#22c55e","#facc15","#38bdf8","#fb7185","#f97316"];
+    let particles=[], width,height,frame;
+    function resize(){
+      const dpr=Math.min(devicePixelRatio||1,2);
+      width=innerWidth;height=innerHeight;
+      canvas.width=width*dpr;canvas.height=height*dpr;
+      canvas.style.width=width+"px";canvas.style.height=height+"px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function make(x=Math.random()*width,y=-20){
+      return{x,y,w:randomBetween(6,13),h:randomBetween(9,18),
+      c:colors[Math.floor(Math.random()*colors.length)],
+      vx:randomBetween(-4.2,4.2),vy:randomBetween(3.5,8),g:randomBetween(.05,.11),
+      r:Math.random()*Math.PI,rs:randomBetween(-.14,.14),o:1};
+    }
+    resize();
+    for(let i=0;i<220;i++){let p=make(Math.random()*width,randomBetween(-100,height*.25));p.vy=randomBetween(2.5,8.5);particles.push(p)}
+    const start=performance.now(), duration=7000;
+    function animate(t){
+      ctx.clearRect(0,0,width,height);
+      if(t-start<2800)for(let i=0;i<3;i++)particles.push(make());
+      particles.forEach(p=>{
+        p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.r+=p.rs;p.x+=Math.sin(p.y*.025)*.65;
+        ctx.save();ctx.globalAlpha=p.o;ctx.translate(p.x,p.y);ctx.rotate(p.r);
+        ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+      });
+      particles=particles.filter(p=>p.y<height+50);
+      if(t-start<duration) frame=requestAnimationFrame(animate);
+      else{cancelAnimationFrame(frame);ctx.clearRect(0,0,width,height);}
+    }
+    requestAnimationFrame(animate);
+  }
+})();
+</script>
+</body>
+</html>
